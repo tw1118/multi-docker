@@ -1,0 +1,51 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t tw1118/react-test -f ./client/Dockerfile.dev ./client
+
+scripts:
+  - docker run -e CI=true tw1118/react-test npm test
+# language: generic
+
+after_success:
+  - docker build -t tw1118/multi-client ./client
+  - docker build -t tw1118/multi-nginx ./nginx
+  - docker build -t tw1118/multi-server ./server
+  - docker build -t tw1118/multi-worker ./worker
+  # Log in to docker cli (upload to docker hub)
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push tw1118/multi-client
+  - docker push tw1118/multi-worker
+  - docker push tw1118/multi-nginx
+  - docker push tw1118/multi-server
+#
+# deploy:
+#   provider: elasticbeanstalk
+#   region: "us-west-2"
+#   app: "docker-react"
+#   env: "DockerReact-env"
+#   bucket_name: "elasticbeanstalk-us-west-2-930032333275"
+#   bucket_path: "docker-react"
+#   on:
+#     branch: master
+#   access_key_id: $AWS_ACCESS_KEY
+#   secret_access_key: $AWS_SECRET_KEY
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+# script:
+#   - docker run USERNAME/react-test npm test -- --coverage
+# instead should be:
+#
+# script:
+#   - docker run -e CI=true USERNAME/react-test npm test
